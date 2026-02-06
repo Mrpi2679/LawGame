@@ -12,7 +12,16 @@ DB_FILE = os.environ.get('DATABASE_URL', 'law_game.db') or 'law_game.db'
 
 def get_db_connection():
     try:
-        conn = sqlite3.connect(DB_FILE)
+        # For Vercel serverless, use /tmp directory for database
+        db_path = DB_FILE
+        if os.environ.get('VERCEL'):
+            db_path = f"/tmp/{os.path.basename(DB_FILE)}"
+            # Copy database to /tmp if it exists in project root
+            if not os.path.exists(db_path) and os.path.exists(DB_FILE):
+                import shutil
+                shutil.copy2(DB_FILE, db_path)
+        
+        conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         return conn
     except sqlite3.Error as e:
@@ -20,7 +29,11 @@ def get_db_connection():
         return None
 
 def init_db():
-    if not os.path.exists(DB_FILE):
+    db_path = DB_FILE
+    if os.environ.get('VERCEL'):
+        db_path = f"/tmp/{os.path.basename(DB_FILE)}"
+    
+    if not os.path.exists(db_path):
         try:
             from init_db import init_database
             init_database()
@@ -691,9 +704,8 @@ init_db()
 # Vercel serverless handler
 app.debug = False
 
-# Vercel serverless function handler
-def handler(event, context):
-    return app(event, context)
+# Vercel serverless function handler - this will be called by Vercel
+app.debug = False
 
 if __name__ == '__main__':
     app.run(debug=False, host='127.0.0.1', port=5000)
