@@ -2,12 +2,13 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import sqlite3
 import os
 import random
+import json
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-in-production'
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 
-# Database file path
-DB_FILE = 'law_game.db'
+# Database file path - works in both local and Vercel environments
+DB_FILE = os.environ.get('DATABASE_URL', 'law_game.db') or 'law_game.db'
 
 def get_db_connection():
     try:
@@ -684,6 +685,15 @@ def reset_scenario(scenario_id):
 
 
 
+# Initialize database for all environments
+init_db()
+
+# Vercel serverless handler
+app.debug = False
+
+# Vercel serverless function handler
+def handler(event, context):
+    return app(event, context)
+
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=False, host='127.0.0.1', port=5000)
