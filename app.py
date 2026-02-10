@@ -444,6 +444,7 @@ def start_bot_session():
                 session['user_score'] = 0
                 session['bot_score'] = 0
                 session['question_attempts'] = {}  # Track attempts per question
+                session['user_answers'] = {}  # Track actual user answers
                 session['session_start_time'] = str(datetime.now())
                 
                 print(f"Started session with {len(questions)} questions")
@@ -559,17 +560,11 @@ def submit_bot_answer():
                 else:
                     user_points = 0
                 
-                # AI gets points if correct and hasn't been awarded for this question yet
+                # AI gets points if correct (always award for new question)
                 bot_points = 0
                 if ai_is_correct:
-                    # Check if AI already got points for this question
-                    if 'ai_awarded_questions' not in session:
-                        session['ai_awarded_questions'] = []
-                    
-                    if question_id not in session['ai_awarded_questions']:
-                        bot_points = 3  # AI gets 3 points for correct answer
-                        session['ai_awarded_questions'].append(question_id)
-                        print(f"AI awarded {bot_points} points for question {question_id}")
+                    bot_points = 3  # AI gets 3 points for correct answer
+                    print(f"AI awarded {bot_points} points for question {question_id}")
                 
                 # Update scores
                 session['user_score'] = session.get('user_score', 0) + user_points
@@ -578,13 +573,24 @@ def submit_bot_answer():
                 print(f"Score update: User +{user_points}, Bot +{bot_points}")
                 print(f"Current scores: User={session['user_score']}, Bot={session['bot_score']}")
                 
-                # Record the answer (only record if correct to avoid duplicates)
-                if is_correct:
-                    cursor.execute("""
-                        INSERT OR REPLACE INTO user_bot_progress (user_id, question_id, answered_at, is_correct)
-                        VALUES (?, ?, datetime('now'), ?)
-                    """, (user_id, question_id, 1))
-                    conn.commit()
+                # Record the answer (record both correct and incorrect to track attempts)
+                cursor.execute("""
+                    INSERT OR REPLACE INTO user_bot_progress (user_id, question_id, answered_at, is_correct)
+                    VALUES (?, ?, datetime('now'), ?)
+                """, (user_id, question_id, 1 if is_correct else 0))
+                conn.commit()
+                
+                # Mark this question as attempted in current session
+                if 'attempted_questions' not in session:
+                    session['attempted_questions'] = []
+                session['attempted_questions'].append(question_id)
+                
+                # Track user's actual answer for results display
+                if 'user_answers' not in session:
+                    session['user_answers'] = {}
+                session['user_answers'][question_id] = selected_answer
+                
+                print(f"Question {question_id} recorded as attempted (correct: {is_correct}, answer: {selected_answer})")
                 
                 print("Answer processed successfully")
                 
@@ -637,7 +643,7 @@ def submit_bot_answer():
                             
                             return redirect(url_for('bot_results', user_score=final_user_score, bot_score=final_bot_score))
                     else:
-                        # Wrong answer - show feedback with same question
+                        # Wrong answer - show feedback and allow continue to next question
                         return render_template('bot_mode.html',
                                              previous_question=question,
                                              user_answer=selected_answer,
@@ -984,12 +990,28 @@ def continue_bot_session():
             
             print(f"Moving to next question: {current_index + 1} of {total_questions}")
             
+            # Generate AI answer for next question
+            import random
+            ai_accuracy = 0.8
+            
+            if random.random() < ai_accuracy:
+                ai_answer = next_question['correct_answer']
+                ai_is_correct = True
+            else:
+                options = ['A', 'B', 'C', 'D']
+                wrong_options = [opt for opt in options if opt != next_question['correct_answer']]
+                ai_answer = random.choice(wrong_options)
+                ai_is_correct = False
+            
             return render_template('bot_mode.html', 
                                  question=next_question,
                                  question_number=current_index + 1,
                                  total_questions=total_questions,
                                  user_score=user_score,
-                                 bot_score=bot_score)
+                                 bot_score=bot_score,
+                                 ai_answer=ai_answer,
+                                 is_ai_correct=ai_is_correct,
+                                 show_result=False)
         else:
             # Session complete, show results
             final_user_score = session.get('user_score', 0)
@@ -1057,10 +1079,11 @@ def bot_results():
             
             # Get user's bot progress with details
             cursor.execute("""
-                SELECT ubp.is_correct, bq.correct_answer, bq.explanation, bq.question_text, bq.option_a, bq.option_b, bq.option_c, bq.option_d
+                SELECT ubp.question_id, ubp.is_correct, bq.correct_answer, bq.explanation, bq.question_text, bq.option_a, bq.option_b, bq.option_c, bq.option_d
                 FROM user_bot_progress ubp
                 JOIN bot_questions bq ON ubp.question_id = bq.id
                 WHERE ubp.user_id = ?
+                ORDER BY ubp.answered_at ASC
             """, (user_id,))
             results = cursor.fetchall()
             
@@ -1078,31 +1101,29 @@ def bot_results():
             questions = []
             user_answers = []
             ai_answers = []
+            user_answers_session = session.get('user_answers', {})
             
             for r in results:
+                question_id = str(r[0])  # question_id is first column
+                
                 # Question data
                 questions.append({
-                    'question_text': r[3],
-                    'correct_answer': r[1],
-                    'explanation': r[2]
+                    'question_text': r[4],
+                    'correct_answer': r[2],
+                    'explanation': r[3]
                 })
                 
-                # User answer data - simulate based on correctness
-                if r[0] == 1:  # Correct answer
-                    user_answer = r[1]  # User gave correct answer
-                else:  # Wrong answer - pick a wrong option
-                    options = [r[4], r[5], r[6], r[7]]
-                    wrong_options = [opt for opt in options if opt != r[1]]
-                    user_answer = wrong_options[0] if wrong_options else 'A'
+                # User answer data - use actual answer from session
+                actual_user_answer = user_answers_session.get(question_id, r[2])  # Fallback to correct answer if not found
                 
                 user_answers.append({
-                    'answer': user_answer,
-                    'is_correct': r[0] == 1
+                    'answer': actual_user_answer,
+                    'is_correct': r[1] == 1
                 })
                 
                 # AI answer data (simulate AI response - AI gets it right)
                 ai_answers.append({
-                    'answer': r[1],  # AI gives correct answer
+                    'answer': r[2],  # AI gives correct answer
                     'is_correct': True
                 })
             
