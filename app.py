@@ -1183,13 +1183,6 @@ def reset_scenario(scenario_id):
     return redirect(url_for('play_scenario', scenario_id=scenario_id))
 
 
-@app.route('/rpg_game')
-def rpg_game():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('rpg_game.html')
-
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
