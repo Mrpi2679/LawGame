@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outcome - {{ scenario.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Scenario Complete</h1>
+            <div class="header-links">
+                <a href="{{ url_for('reset_scenario', scenario_id=scenario_id) }}" class="btn btn-secondary">Play Again</a>
+                <a href="{{ url_for('scenario_chains') }}" class="btn btn-secondary">Back to Scenarios</a>
+            </div>
+        </div>
+        
+        <div class="scenario-outcome-container">
+            <div class="outcome-header">
+                <h2>Final Outcome</h2>
+            </div>
+            
+            <div class="outcome-content">
+                <div class="final-outcome">
+                    <h3>What Legally Happened:</h3>
+                    <p>{{ outcome.final_outcome }}</p>
+                </div>
+                
+                <div class="learning-summary">
+                    <h3>Key Learning:</h3>
+                    <p>{{ outcome.learning_summary }}</p>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('reset_scenario', scenario_id=scenario_id) }}" class="btn btn-primary">Play This Scenario Again</a>
+                <a href="{{ url_for('scenario_chains') }}" class="btn btn-secondary">Try Another Scenario</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

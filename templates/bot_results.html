@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Challenge Results - Law Learning Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Challenge Bot - Results</h1>
+            <p>Your performance against AI</p>
+            <div class="header-links">
+                <a href="{{ url_for('bot_mode') }}" class="btn btn-secondary">New Challenge</a>
+                <a href="{{ url_for('mode_select') }}" class="btn btn-secondary">Back to Modes</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <div class="score-summary">
+                <h2>Final Score</h2>
+                <div class="score-comparison">
+                    <div class="score-item user-score">
+                        <h3>You</h3>
+                        <div class="score-number">{{ user_score }}</div>
+                        <div class="score-percentage">{{ "%.1f"|format((user_score / total_questions) * 100) }}%</div>
+                    </div>
+                    <div class="score-vs">VS</div>
+                    <div class="score-item ai-score">
+                        <h3>AI Bot</h3>
+                        <div class="score-number">{{ ai_score }}</div>
+                        <div class="score-percentage">{{ "%.1f"|format((ai_score / total_questions) * 100) }}%</div>
+                    </div>
+                </div>
+                
+                <div class="result-message">
+                    {% if user_score > ai_score %}
+                        <h3 class="success-message">🎉 Congratulations! You Won!</h3>
+                        <p>You performed better than the AI bot!</p>
+                    {% elif user_score == ai_score %}
+                        <h3 class="info-message">🤝 It's a Tie!</h3>
+                        <p>You and the AI performed equally well!</p>
+                    {% else %}
+                        <h3 class="incorrect-result">🤖 AI Won This Round</h3>
+                        <p>The AI performed better. Keep practicing!</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if all_completed %}
+            <div class="completion-notice">
+                <div class="completion-icon">🏆</div>
+                <h3>All Challenges Complete!</h3>
+                <p>You've completed every available question in the You vs Bot mode!</p>
+                <p>Check back soon for more legal challenges or try other game modes.</p>
+            </div>
+            {% endif %}
+
+            <h3>Question Breakdown</h3>
+            <div class="questions-breakdown">
+                {% for i in range(total_questions) %}
+                <div class="question-result-card">
+                    <div class="question-header">
+                        <h4>Question {{ i + 1 if i >= 0 else 1 }}</h4>
+                    </div>
+                    
+                    <div class="question-content">
+                        <p class="question-text">{{ questions[i].question_text }}</p>
+                        
+                        <div class="answers-comparison">
+                            <div class="user-answer-section {% if user_answers[i].is_correct %}correct{% else %}incorrect{% endif %}">
+                                <h5>Your Answer: {{ user_answers[i].answer }}</h5>
+                                {% if user_answers[i].is_correct %}
+                                    <span class="correct-badge">✓ Correct</span>
+                                {% else %}
+                                    <span class="incorrect-badge">✗ Incorrect</span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="ai-answer-section {% if ai_answers[i].is_correct %}correct{% else %}incorrect{% endif %}">
+                                <h5>AI Answer: {{ ai_answers[i].answer }}</h5>
+                                {% if ai_answers[i].is_correct %}
+                                    <span class="correct-badge">✓ Correct</span>
+                                {% else %}
+                                    <span class="incorrect-badge">✗ Incorrect</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="correct-answer-info">
+                            <strong>Correct Answer: {{ questions[i].correct_answer }}</strong>
+                            <div class="explanation">
+                                <p>{{ questions[i].explanation }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="action-buttons">
+                {% if all_completed %}
+                    <a href="{{ url_for('bot_mode') }}" class="btn btn-primary">View Completion Page</a>
+                    <a href="{{ url_for('reset_bot_questions') }}" class="btn btn-secondary">Reset Progress</a>
+                {% else %}
+                    <a href="{{ url_for('bot_mode') }}" class="btn btn-primary btn-large">Start New Challenge</a>
+                {% endif %}
+                <a href="{{ url_for('mode_select') }}" class="btn btn-secondary">Back to Modes</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

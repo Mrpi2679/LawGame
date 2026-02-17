@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scenario Chains - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Scenario Chains</h1>
+            <div class="header-links">
+                <a href="{{ url_for('mode_select') }}" class="btn btn-secondary">Back to Modes</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+        
+        <!-- Progress Overview -->
+        <div class="progress-container">
+            <h3>Your Scenario Progress</h3>
+            <div class="progress-bar">
+                {% set completed_count = scenarios | selectattr('completed') | list | length %}
+                {% set total_count = scenarios | length %}
+                {% set progress_percentage = (completed_count / total_count * 100) | round(0) %}
+                <div class="progress-fill" style="width: {{ progress_percentage }}%"></div>
+            </div>
+            <div class="progress-text">
+                <span>Completed: {{ completed_count }}/{{ total_count }} scenarios</span>
+                <span class="progress-percentage">{{ progress_percentage }}%</span>
+            </div>
+        </div>
+        
+        <div class="scenario-list">
+            <h2>Available Legal Scenarios</h2>
+            <p class="intro-text">Experience real-world legal situations through multi-step scenarios. Make decisions, see consequences, and learn how law applies in practice.</p>
+            
+            {% if scenarios %}
+                <div class="scenarios-grid">
+                    {% for scenario in scenarios %}
+                        <div class="scenario-card {% if not scenario.completed %}locked{% endif %} {% if scenario.completed %}completed{% endif %}">
+                            <div class="scenario-badge">{{ scenario.domain }}</div>
+                            <h3>{{ scenario.title }}</h3>
+                            <p class="law-info"><strong>Law:</strong> {{ scenario.law_involved }}</p>
+                            <div class="level-header">
+                                {% if scenario.completed %}
+                                    <span class="badge badge-success">Completed</span>
+                                {% elif not scenario.completed %}
+                                    <span class="badge badge-available">Available</span>
+                                {% endif %}
+                            </div>
+                            {% if scenario.completed %}
+                                <a href="{{ url_for('play_scenario', scenario_id=scenario.id) }}" class="btn btn-secondary">Review Scenario</a>
+                            {% else %}
+                                <a href="{{ url_for('play_scenario', scenario_id=scenario.id) }}" class="btn btn-primary">Start Scenario</a>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-scenarios">
+                    <p>No scenarios available at the moment.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

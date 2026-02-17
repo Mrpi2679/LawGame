@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Mode - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='ux-enhancements.js') }}" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-item active">Game Modes</span>
+        </nav>
+        
+        <div class="header">
+            <h1>Law Game</h1>
+            <p>Welcome, {{ session.username }}!</p>
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+        </div>
+        
+        <div class="mode-selection">
+            <h2>Select Game Mode</h2>
+            <p class="intro-text">Choose your learning path and master legal concepts through different approaches.</p>
+            
+            <div class="mode-cards">
+                <div class="mode-card">
+                    <h3>Level-based Learning</h3>
+                    <p>Progress through structured levels, unlocking new content as you complete each level. Master legal concepts step by step with comprehensive learning materials.</p>
+                    <a href="{{ url_for('levels') }}" class="btn btn-primary">Start Learning</a>
+                </div>
+                
+                <div class="mode-card">
+                    <h3>You vs Bot</h3>
+                    <p>Test your knowledge with random legal scenario questions against AI. Get immediate feedback and explanations to improve your understanding.</p>
+                    <a href="{{ url_for('bot_mode') }}" class="btn btn-primary">Challenge Bot</a>
+                </div>
+                
+                <div class="mode-card">
+                    <h3>Scenario Chains</h3>
+                    <p>Experience real-world legal situations through multi-step scenarios. Make decisions, see consequences, and learn how law applies in practice.</p>
+                    <a href="{{ url_for('scenario_chains') }}" class="btn btn-primary">Start Scenario</a>
+                </div>
+
+                <div class="mode-card">
+                    <h3>Legal Quest RPG</h3>
+                    <p>Explore a pixel-art town and learn legal concepts by interacting with characters. Meet the Judge, Police Officer, Lawyer, and citizens to discover real-world legal scenarios.</p>
+                    <a href="{{ url_for('rpg_game') }}" class="btn btn-primary">Play RPG</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

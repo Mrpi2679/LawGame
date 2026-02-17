@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scenario Complete - {{ scenario.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ scenario.title }} - Complete!</h1>
+            <div class="header-links">
+                <a href="{{ url_for('scenario_chains') }}" class="btn btn-secondary">Back to Scenarios</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+        
+        <div class="scenario-info">
+            <div class="info-badge">
+                <span class="domain-badge">{{ scenario.domain }}</span>
+                <span class="law-badge">{{ scenario.law_involved }}</span>
+            </div>
+        </div>
+        
+        <div class="scenario-complete-container">
+            <div class="completion-header">
+                <h2>🎉 Scenario Completed!</h2>
+                <p>You have successfully completed all questions in this scenario.</p>
+            </div>
+            
+            <div class="results-summary">
+                {% set correct_count = answers | selectattr('is_correct') | list | length %}
+                {% set total_count = answers | length %}
+                <h3>Your Performance:</h3>
+                <p>You answered <strong>{{ correct_count }}</strong> out of <strong>{{ total_count }}</strong> questions correctly.</p>
+                <div class="score-badge">
+                    Score: {{ ((correct_count / total_count) * 100) | round(0) }}%
+                </div>
+            </div>
+            
+            <div class="answers-review">
+                <h3>Review Your Answers:</h3>
+                {% for answer in answers %}
+                <div class="answer-item {% if answer.is_correct %}correct-answer{% else %}incorrect-answer{% endif %}">
+                    <div class="question-number">Question {{ answer.question_number }}</div>
+                    <div class="question-text">{{ answer.question_text }}</div>
+                    <div class="answer-details">
+                        <span class="your-answer">Your answer: <strong>{{ answer.selected_answer }}</strong></span>
+                        {% if not answer.is_correct %}
+                        <span class="correct-answer">Correct answer: <strong>{{ answer.correct_answer }}</strong></span>
+                        {% endif %}
+                        <span class="status">{% if answer.is_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('play_scenario', scenario_id=scenario.id) }}" class="btn btn-primary">Try This Scenario Again</a>
+                <a href="{{ url_for('scenario_chains') }}" class="btn btn-secondary">Try Another Scenario</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
