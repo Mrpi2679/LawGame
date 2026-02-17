@@ -35,6 +35,12 @@
             <h2>Available Legal Scenarios</h2>
             <p class="intro-text">Experience real-world legal situations through multi-step scenarios. Make decisions, see consequences, and learn how law applies in practice.</p>
             
+            <div style="margin-bottom: 30px; padding: 20px; background: #e8f4f8; border-radius: 10px;">
+                <h3 style="margin-top: 0;">Have Your Own Legal Situation?</h3>
+                <p>Don't see your situation? Describe it to our Legal Chatbot and get matched with relevant learning content!</p>
+                <a href="{{ url_for('legal_chatbot') }}" class="btn btn-primary">Describe Your Scenario</a>
+            </div>
+            
             {% if scenarios %}
                 <div class="scenarios-grid">
                     {% for scenario in scenarios %}

@@ -1390,6 +1390,68 @@ def submit_role_level(role_level_id):
     return redirect(url_for('role_select'))
 
 
+@app.route('/legal_chatbot', methods=['GET', 'POST'])
+def legal_chatbot():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user_scenario = None
+    matched_scenario = None
+    
+    if request.method == 'POST':
+        user_scenario = request.form.get('scenario', '').strip()
+        
+        if user_scenario:
+            conn = get_db_connection()
+            if conn:
+                try:
+                    cursor = conn.cursor()
+                    
+                    cursor.execute("SELECT id, domain, law_involved, title FROM scenario_chains")
+                    all_scenarios = [dict(row) for row in cursor.fetchall()]
+                    
+                    user_scenario_lower = user_scenario.lower()
+                    
+                    keywords_map = {
+                        'consumer': ['consumer', 'mrp', 'overcharge', 'refund', 'defective', 'warranty', 'shop', 'store', 'buy', 'purchase'],
+                        'labour': ['employee', 'employer', 'workplace', 'salary', 'leave', 'maternity', 'rights', 'termination', 'harassment'],
+                        'cyber': ['aadhaar', 'data', 'privacy', 'online', 'digital', 'password', 'account', 'hack', 'cyber'],
+                        'property': ['property', 'land', 'house', 'rent', 'tenant', 'landlord', 'ownership', 'deed'],
+                        'contract': ['contract', 'agreement', 'breach', 'party', 'terms', 'promise'],
+                        'criminal': ['theft', 'robbery', 'assault', 'murder', 'fraud', 'crime', 'police'],
+                        'constitutional': ['rights', 'freedom', 'constitution', 'discrimination', 'equal']
+                    }
+                    
+                    scenario_scores = []
+                    for scenario in all_scenarios:
+                        score = 0
+                        domain_lower = scenario['domain'].lower()
+                        law_lower = scenario['law_involved'].lower()
+                        title_lower = scenario['title'].lower()
+                        
+                        for category, keywords in keywords_map.items():
+                            if any(kw in user_scenario_lower for kw in keywords):
+                                if category in domain_lower or category in law_lower:
+                                    score += 3
+                                if any(kw in title_lower for kw in keywords):
+                                    score += 2
+                        
+                        scenario_scores.append((scenario, score))
+                    
+                    scenario_scores.sort(key=lambda x: x[1], reverse=True)
+                    
+                    if scenario_scores and scenario_scores[0][1] > 0:
+                        matched_scenario = scenario_scores[0][0]
+                    else:
+                        matched_scenario = None
+                        
+                except Exception as e:
+                    print(f"Chatbot error: {e}")
+                finally:
+                    conn.close()
+    
+    return render_template('legal_chatbot.html', user_scenario=user_scenario, matched_scenario=matched_scenario)
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

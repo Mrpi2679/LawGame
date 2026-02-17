@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Chatbot - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='ux-enhancements.js') }}" defer></script>
+    <style>
+        .chatbot-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .scenario-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #2c3e50;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            min-height: 120px;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+        .scenario-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .chatbot-response {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .response-section {
+            margin-bottom: 15px;
+        }
+        .response-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .response-content {
+            color: #555;
+        }
+        .response-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        .response-list li {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .disclaimer-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        .no-match {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #721c24;
+        }
+        .your-scenario {
+            background: #e7f3ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .your-scenario h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .your-scenario p {
+            margin: 0;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator">›</span>
+            <a href="{{ url_for('mode_select') }}" class="breadcrumb-item">Game Modes</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-item active">Legal Chatbot</span>
+        </nav>
+        
+        <div class="header">
+            <h1>Legal Education Chatbot</h1>
+            <div class="header-links">
+                <a href="{{ url_for('mode_select') }}" class="btn btn-secondary">Back to Modes</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+        
+        <div class="chatbot-container">
+            <p>Describe your legal situation in simple words, and I'll help identify the relevant area of law.</p>
+            
+            <form method="POST" action="{{ url_for('legal_chatbot') }}">
+                <textarea 
+                    name="scenario" 
+                    class="scenario-input" 
+                    placeholder="Example: I bought a phone from a store but it's not working properly. The shopkeeper refuses to replace it or give my money back..."
+                    required
+                >{{ user_scenario or '' }}</textarea>
+                <button type="submit" class="btn btn-primary btn-large">Analyze My Situation</button>
+            </form>
+            
+            {% if user_scenario %}
+                <div class="your-scenario">
+                    <h3>Your Situation:</h3>
+                    <p>{{ user_scenario }}</p>
+                </div>
+                
+                {% if matched_scenario %}
+                    <div class="chatbot-response">
+                        <div class="response-section">
+                            <div class="response-label">🧠 Situation Identified:</div>
+                            <div class="response-content">{{ matched_scenario.title }}</div>
+                        </div>
+                        
+                        <div class="response-section">
+                            <div class="response-label">📚 Applicable Legal Category:</div>
+                            <div class="response-content">{{ matched_scenario.domain }}</div>
+                        </div>
+                        
+                        <div class="response-section">
+                            <div class="response-label">⚖️ Relevant Law(s) from Game Database:</div>
+                            <div class="response-content">{{ matched_scenario.law_involved }}</div>
+                        </div>
+                        
+                        <div class="response-section">
+                            <div class="response-label">🧩 Why This Applies:</div>
+                            <div class="response-content">
+                                {% if matched_scenario.domain == 'Consumer' %}
+                                    Your scenario involves a purchase dispute where the seller is not honoring their obligations. This falls under consumer protection laws.
+                                {% elif matched_scenario.domain == 'Labour' %}
+                                    Your scenario relates to employer-employee relationship and workplace rights.
+                                {% elif matched_scenario.domain == 'Cyber' %}
+                                    Your scenario involves digital data and privacy concerns.
+                                {% else %}
+                                    Based on the keywords in your description, this scenario matches our {{ matched_scenario.domain }} law category.
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="response-section">
+                            <div class="response-label">🎮 Player Options:</div>
+                            <ul class="response-list">
+                                <li><strong>Play Scenario:</strong> Practice with similar scenarios in our Scenario Chains mode</li>
+                                <li><strong>Level Learning:</strong> Study {{ matched_scenario.domain }} law in detail through our Level-based Learning</li>
+                                <li><strong>Role-based Learning:</strong> Learn laws relevant to your profession</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="disclaimer-box">
+                            <strong>⚠️ Disclaimer:</strong>
+                            This response is for educational purposes within a learning game and does not constitute legal advice.
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <a href="{{ url_for('play_scenario', scenario_id=matched_scenario.id) }}" class="btn btn-primary">Try This Scenario</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="no-match">
+                        <h3>⚠️ No Close Match Found</h3>
+                        <p>Your scenario doesn't closely match any existing scenarios in the game database. Try describing it differently or explore our other learning modes:</p>
+                        <ul>
+                            <li>Level-based Learning - General legal concepts</li>
+                            <li>Scenario Chains - Real-world legal situations</li>
+                            <li>Role-based Learning - Career-specific laws</li>
+                        </ul>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
