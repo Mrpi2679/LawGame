@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Quest - Learn Law Through Adventure</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+        }
+        
+        .game-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            z-index: 100;
+        }
+        
+        .game-title {
+            color: #ffd700;
+            font-size: 14px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        .back-btn {
+            background: linear-gradient(180deg, #4a4a7a 0%, #3a3a5a 100%);
+            border: 2px solid #6a6a9a;
+            color: #e0e0e0;
+            padding: 10px 16px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .back-btn:hover {
+            background: linear-gradient(180deg, #5a5a8a 0%, #4a4a6a 100%);
+            border-color: #8a8aba;
+        }
+        
+        #gameContainer {
+            position: relative;
+            border: 4px solid #4a4a6a;
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(100, 100, 200, 0.3);
+        }
+        
+        #gameCanvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        #dialogueBox {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 700px;
+            background: linear-gradient(180deg, #2d2d4a 0%, #1a1a2e 100%);
+            border: 3px solid #6a6a9a;
+            border-radius: 8px;
+            padding: 15px 20px;
+            display: none;
+            pointer-events: auto;
+        }
+        
+        #dialogueBox.active {
+            display: block;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        #speakerName {
+            color: #ffd700;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        #dialogueText {
+            color: #e0e0e0;
+            font-size: 12px;
+            line-height: 1.8;
+            min-height: 60px;
+        }
+        
+        #choices {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .choice-btn {
+            background: linear-gradient(180deg, #4a4a7a 0%, #3a3a5a 100%);
+            border: 2px solid #6a6a9a;
+            color: #e0e0e0;
+            padding: 12px 16px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        
+        .choice-btn:hover {
+            background: linear-gradient(180deg, #5a5a8a 0%, #4a4a6a 100%);
+            border-color: #8a8aba;
+            transform: translateX(5px);
+        }
+        
+        .choice-btn::before {
+            content: '▸ ';
+            color: #ffd700;
+        }
+        
+        #hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #888;
+            font-size: 8px;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        #locationName {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #ffd700;
+            font-size: 10px;
+            text-shadow: 2px 2px 0 #000;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        
+        #controls {
+            margin-top: 20px;
+            color: #6a6a9a;
+            font-size: 10px;
+            text-align: center;
+        }
+        
+        #controls span {
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <div class="game-title">Legal Quest RPG</div>
+        <a href="{{ url_for('mode_select') }}" class="back-btn">← Back to Menu</a>
+    </div>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div id="locationName">Town Square</div>
+            <div id="dialogueBox">
+                <div id="speakerName"></div>
+                <div id="dialogueText"></div>
+                <div id="choices"></div>
+            </div>
+            <div id="hint">Explore the town</div>
+        </div>
+    </div>
+    <div id="controls">
+        <span>WASD</span> or <span>Arrow Keys</span> to move | <span>E</span> or <span>ENTER</span> to interact
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const TILE_SIZE = 48;
+        
+        const gameState = {
+            player: { x: 400, y: 300, direction: 'down', moving: false, frame: 0 },
+            npcs: [],
+            buildings: [],
+            currentDialogue: null,
+            dialogueIndex: 0,
+            showChoices: false,
+            currentScenario: null,
+            scenarioIndex: 0,
+            learnedConcepts: new Set()
+        };
+        
+        const bgImage = new Image();
+        bgImage.src = '{{ url_for("static", filename="rpg_assets/background.png") }}';
+        
+        const playerImg = new Image();
+        playerImg.src = '{{ url_for("static", filename="rpg_assets/Main Character.png") }}';
+        
+        let walkableMap = null;
+        
+        bgImage.onload = function() {
+            console.log('Background loaded, creating collision map...');
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 800;
+            tempCanvas.height = 600;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(bgImage, 0, 0, 800, 600);
+            
+            const imageData = tempCtx.getImageData(0, 0, 800, 600);
+            const data = imageData.data;
+            
+            walkableMap = [];
+            for (let y = 0; y < 600; y += 16) {
+                const row = [];
+                for (let x = 0; x < 800; x += 16) {
+                    const idx = (y * 800 + x) * 4;
+                    const r = data[idx];
+                    const g = data[idx + 1];
+                    const b = data[idx + 2];
+                    const brightness = (r + g + b) / 3;
+                    row.push(brightness > 50);
+                }
+                walkableMap.push(row);
+            }
+            console.log('Collision map created');
+        };
+        
+        function isWalkable(x, y) {
+            if (!walkableMap) return true;
+            const gridX = Math.floor(x / 16);
+            const gridY = Math.floor(y / 16);
+            if (gridY < 0 || gridY >= walkableMap.length || gridX < 0 || gridX >= walkableMap[0].length) {
+                return false;
+            }
+            return walkableMap[gridY][gridX];
+        }
+        
+        const COLORS = {
+            grass: '#3d5c3d',
+            grassDark: '#2d4a2d',
+            path: '#8b7355',
+            pathLight: '#a08060',
+            water: '#4a90c2',
+            waterDark: '#3a70a2',
+            wall: '#6a6a7a',
+            roof: '#8b4513',
+            roofDark: '#6b3503',
+            wood: '#a0522d',
+            window: '#87ceeb',
+            door: '#654321'
+        };
+        
+        function createPixelData(width, height, drawFn) {
+            const c = document.createElement('canvas');
+            c.width = width;
+            c.height = height;
+            const x = c.getContext('2d');
+            drawFn(x);
+            return c;
+        }
+        
+        const sprites = {
+            player: createPixelData(16, 16, (x) => {
+                x.fillStyle = '#ffd5b5';
+                x.fillRect(5, 3, 6, 4);
+                x.fillRect(4, 4, 8, 1);
+                x.fillStyle = '#4a3728';
+                x.fillRect(4, 1, 8, 3);
+                x.fillRect(3, 2, 1, 2);
+                x.fillRect(12, 2, 1, 2);
+                x.fillStyle = '#2a1a10';
+                x.fillRect(6, 4, 1, 1);
+                x.fillRect(9, 4, 1, 1);
+                x.fillStyle = '#e74c3c';
+                x.fillRect(5, 5, 6, 4);
+                x.fillRect(4, 9, 2, 4);
+                x.fillRect(10, 9, 2, 4);
+                x.fillStyle = '#3498db';
+                x.fillRect(6, 9, 4, 5);
+                x.fillRect(5, 14, 2, 2);
+                x.fillRect(9, 14, 2, 2);
+            }),
+            judge: createPixelData(16, 16, (x) => {
+                x.fillStyle = '#ffd5b5';
+                x.fillRect(5, 2, 6, 4);
+                x.fillStyle = '#2a1a10';
+                x.fillRect(4, 0, 8, 2);
+                x.fillRect(3, 1, 1, 2);
+                x.fillRect(12, 1, 1, 2);
+                x.fillStyle = '#1a0a00';
+                x.fillRect(6, 3, 1, 1);
+                x.fillRect(9, 3, 1, 1);
+                x.fillStyle = '#2c3e50';
+                x.fillRect(4, 6, 8, 3);
+                x.fillStyle = '#ecf0f1';
+                x.fillRect(5, 7, 6, 1);
+                x.fillStyle = '#8e44ad';
+                x.fillRect(5, 9, 6, 4);
+                x.fillStyle = '#2c3e50';
+                x.fillRect(3, 9, 2, 4);
+                x.fillRect(11, 9, 2, 4);
+                x.fillStyle = '#1a1a1a';
+                x.fillRect(5, 13, 2, 3);
+                x.fillRect(9, 13, 2, 3);
+                x.fillStyle = '#f1c40f';
+                x.fillRect(7, 4, 2, 1);
+            }),
+            police: createPixelData(16, 16, (x) => {
+                x.fillStyle = '#ffd5b5';
+                x.fillRect(5, 3, 6, 4);
+                x.fillStyle = '#1a1a1a';
+                x.fillRect(4, 1, 8, 3);
+                x.fillStyle = '#2a1a10';
+                x.fillRect(6, 4, 1, 1);
+                x.fillRect(9, 4, 1, 1);
+                x.fillStyle = '#2980b9';
+                x.fillRect(4, 7, 8, 3);
+                x.fillStyle = '#f1c40f';
+                x.fillRect(7, 7, 2, 2);
+                x.fillStyle = '#2c3e50';
+                x.fillRect(5, 10, 6, 3);
+                x.fillStyle = '#3498db';
+                x.fillRect(3, 8, 2, 5);
+                x.fillRect(11, 8, 2, 5);
+                x.fillStyle = '#1a1a1a';
+                x.fillRect(5, 13, 2, 3);
+                x.fillRect(9, 13, 2, 3);
+            }),
+            lawyer: createPixelData(16, 16, (x) => {
+                x.fillStyle = '#ffd5b5';
+                x.fillRect(5, 2, 6, 4);
+                x.fillStyle = '#5d4e37';
+                x.fillRect(4, 0, 8, 2);
+                x.fillRect(3, 1, 1, 2);
+                x.fillRect(12, 1, 1, 2);
+                x.fillStyle = '#2a1a10';
+                x.fillRect(6, 3, 1, 1);
+                x.fillRect(9, 3, 1, 1);
+                x.fillStyle = '#34495e';
+                x.fillRect(4, 6, 8, 1);
+                x.fillStyle = '#ecf0f1';
+                x.fillRect(5, 7, 6, 1);
+                x.fillStyle = '#2c3e50';
+                x.fillRect(5, 8, 6, 4);
+                x.fillStyle = '#8e44ad';
+                x.fillRect(3, 9, 2, 3);
+                x.fillRect(11, 9, 2, 3);
+                x.fillStyle = '#1a1a1a';
+                x.fillRect(5, 12, 2, 4);
+                x.fillRect(9, 12, 2, 4);
+                x.fillStyle = '#c0392b';
+                x.fillRect(7, 3, 2, 1);
+            }),
+            citizen: createPixelData(16, 16, (x) => {
+                const skinTone = '#e8c4a0';
+                x.fillStyle = skinTone;
+                x.fillRect(5, 3, 6, 4);
+                x.fillStyle = '#8b4513';
+                x.fillRect(4, 1, 8, 2);
+                x.fillRect(3, 2, 1, 2);
+                x.fillRect(12, 2, 1, 2);
+                x.fillStyle = '#2a1a10';
+                x.fillRect(6, 4, 1, 1);
+                x.fillRect(9, 4, 1, 1);
+                x.fillStyle = '#27ae60';
+                x.fillRect(4, 7, 8, 1);
+                x.fillStyle = '#3498db';
+                x.fillRect(5, 8, 6, 4);
+                x.fillStyle = '#2c3e50';
+                x.fillRect(3, 9, 2, 3);
+                x.fillRect(11, 9, 2, 3);
+                x.fillStyle = '#7f8c8d';
+                x.fillRect(5, 12, 2, 4);
+                x.fillRect(9, 12, 2, 4);
+            })
+        };
+        
+        const map = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,3,3,3,2,2,2,2,2,2,3,3,3,2,2,1],
+            [1,2,3,3,3,2,2,2,2,2,2,3,3,3,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        function initBuildings() {
+            gameState.buildings = [
+                { name: 'Courthouse', x: 2, y: 2, width: 4, height: 3, color: '#8b7355', roofColor: '#654321', npc: 'judge' },
+                { name: 'Police Station', x: 11, y: 2, width: 4, height: 3, color: '#4a6fa5', roofColor: '#2c3e50', npc: 'police' },
+                { name: 'Law Library', x: 2, y: 8, width: 3, height: 3, color: '#6b4423', roofColor: '#4a2f18', npc: 'lawyer' },
+                { name: 'Town Square', x: 7, y: 5, width: 3, height: 2, color: '#5a7a5a', roofColor: null, npc: 'citizen' }
+            ];
+            
+            gameState.npcs = [
+                { id: 'judge', name: 'Judge Thompson', sprite: 'judge', x: 130, y: 180, scenarios: getJudgeScenarios() },
+                { id: 'police', name: 'Officer Martinez', sprite: 'police', x: 550, y: 180, scenarios: getPoliceScenarios() },
+                { id: 'lawyer', name: 'Attorney Chen', sprite: 'lawyer', x: 180, y: 400, scenarios: getLawyerScenarios() },
+                { id: 'citizen', name: 'Mr. Johnson', sprite: 'citizen', x: 400, y: 300, scenarios: getCitizenScenarios() }
+            ];
+        }
+        
+        function getJudgeScenarios() {
+            return [
+                {
+                    intro: "Welcome, young law student! I'm Judge Thompson. The courthouse is the heart of our justice system. Would you like to learn about the judicial process?",
+                    concept: "Judicial Process",
+                    choices: [
+                        { text: "Yes, explain how courts work!", next: { concept: "The judicial process involves courts interpreting and applying laws to resolve disputes. Judges ensure fair trials and equal protection under the law.", feedback: "Excellent! Remember, courts provide a forum for peaceful dispute resolution." }},
+                        { text: "What's a typical court case like?", next: { concept: "A typical case starts with a complaint, followed by evidence presentation, witness testimony, and finally a judgment. Due process ensures everyone gets a fair hearing.", feedback: "Due process is a fundamental constitutional right!" }},
+                        { text: "Can anyone become a judge?", next: { concept: "Judges are typically appointed or elected after years of legal practice. They must have extensive knowledge of the law and demonstrate impartiality.", feedback: "Judicial appointments are important political processes!" }}
+                    ]
+                },
+                {
+                    intro: "Today we'll discuss constitutional law. The Constitution is the supreme law of the land. Do you have a specific question?",
+                    concept: "Constitutional Law",
+                    choices: [
+                        { text: "What are my basic rights?", next: { concept: "Basic rights include freedom of speech, religion, assembly, and the right to due process. The Bill of Rights protects these fundamental freedoms.", feedback: "These rights form the foundation of our democracy!" }},
+                        { text: "How does judicial review work?", next: { concept: "Judicial review allows courts to strike down laws that violate the Constitution. This power was established in Marbury v. Madison (1803).", feedback: "This is one of the most important powers of the judiciary!" }},
+                        { text: "What is separation of powers?", next: { concept: "Separation of powers divides government into three branches: legislative (makes laws), executive (enforces laws), and judicial (interprets laws).", feedback: "This prevents any one branch from becoming too powerful!" }}
+                    ]
+                }
+            ];
+        }
+        
+        function getPoliceScenarios() {
+            return [
+                {
+                    intro: "Hello there! I'm Officer Martinez. Law enforcement plays a crucial role in maintaining public safety. Want to learn about your rights when interacting with police?",
+                    concept: "Police Interactions",
+                    choices: [
+                        { text: "What are my rights when stopped?", next: { concept: "You have the right to remain silent, the right to an attorney, and the right to know why you're being detained. You don't have to consent to searches without a warrant.", feedback: "Know your rights! But also be respectful and cooperative." }},
+                        { text: "When can police search my belongings?", next: { concept: "Police can search with your consent, a warrant, or if there's probable cause. Vehicles can be searched if contraband is in plain view or with certain exceptions.", feedback: "Probable cause is a key legal concept!" }},
+                        { text: "What's the difference between arrest and detainment?", next: { concept: "Arrest means you're being charged with a crime. Detainment is a temporary hold for investigation. Both require different levels of justification.", feedback: "Understanding this distinction is important!" }}
+                    ]
+                },
+                {
+                    intro: "Let me tell you about criminal law basics. Criminal law deals with offenses against the state and public safety.",
+                    concept: "Criminal Law Basics",
+                    choices: [
+                        { text: "What's the difference between felony and misdemeanor?", next: { concept: "Felonies are serious crimes punishable by imprisonment over one year or death. Misdemeanors are less serious, typically punishable by fines or short jail time.", feedback: "This classification affects sentencing significantly!" }},
+                        { text: "What is 'innocent until proven guilty'?", next: { concept: "This presumption means the burden of proof lies with the prosecution. Defendants don't have to prove their innocence - the state must prove guilt beyond a reasonable doubt.", feedback: "A cornerstone of criminal justice!" }},
+                        { text: "What are Miranda rights?", next: { concept: "Miranda rights include the right to remain silent, that anything you say can be used against you, the right to an attorney, and the right to have one provided if you can't afford it.", feedback: "Always invoke your Miranda rights when questioned!" }}
+                    ]
+                }
+            ];
+        }
+        
+        function getLawyerScenarios() {
+            return [
+                {
+                    intro: "Welcome to the Law Library! I'm Attorney Chen. As a lawyer, I help people navigate the complex legal system. What would you like to learn about?",
+                    concept: "Legal Profession",
+                    choices: [
+                        { text: "What does a lawyer actually do?", next: { concept: "Lawyers provide legal advice, represent clients in court, draft legal documents, negotiate settlements, and advocate for their clients' interests.", feedback: "Lawyers are essential to accessing justice!" }},
+                        { text: "How do I become a lawyer?", next: { concept: "Becoming a lawyer requires: 1) Bachelor's degree, 2) Law school (3 years), 3) Pass the bar exam. Some states allow alternative paths.", feedback: "The bar exam is notoriously challenging!" }},
+                        { text: "What's the difference between civil and criminal law?", next: { concept: "Criminal law deals with crimes against the state (fines, imprisonment). Civil law deals with disputes between individuals (compensation, contracts).", feedback: "Most legal work actually happens in civil court!" }}
+                    ]
+                },
+                {
+                    intro: "Let's discuss contract law - essential for everyday life. Contracts are everywhere, from buying phone plans to employment.",
+                    concept: "Contract Law",
+                    choices: [
+                        { text: "What makes a contract valid?", next: { concept: "A valid contract requires: 1) Offer and acceptance, 2) Consideration (something of value), 3) Capacity (both parties can contract), 4) Legal purpose.", feedback: "These four elements are crucial!" }},
+                        { text: "Can I break a contract?", next: { concept: "Breaking a contract (breach) allows the other party to seek damages. However, some breaches may be excused due to impossibility or frustration of purpose.", feedback: "Always consider legal consequences before breaking agreements!" }},
+                        { text: "What is negligence?", next: { concept: "Negligence is a civil wrong where someone fails to act with reasonable care, causing harm to another. Elements: duty, breach, causation, damages.", feedback: "Most personal injury cases are based on negligence!" }}
+                    ]
+                }
+            ];
+        }
+        
+        function getCitizenScenarios() {
+            return [
+                {
+                    intro: "Oh, hello there! I'm just a regular citizen here in town. I had some trouble recently and learned a lot about the legal system. Want to hear about it?",
+                    concept: "Consumer Rights",
+                    choices: [
+                        { text: "What kind of trouble?", next: { concept: "I bought a defective product and the store refused to refund me! I learned about consumer protection laws and warranty rights.", feedback: "Consumer laws protect buyers!" }},
+                        { text: "What can I do about defective products?", next: { concept: "You can: 1) Request repair/replacement, 2) Demand a refund, 3) File a complaint with consumer protection agencies, 4) Sue in small claims court.", feedback: "Small claims court is designed for this!" }},
+                        { text: "What's a warranty?", next: { concept: "A warranty is a seller's promise about a product's quality. Express warranties are explicit, while implied warranties (merchantability) exist by law.", feedback: "Always read warranty terms carefully!" }}
+                    ]
+                },
+                {
+                    intro: "Let me tell you about neighbor disputes - they can get messy! I had an issue with my neighbor about property boundaries.",
+                    concept: "Property Law",
+                    choices: [
+                        { text: "What was the dispute about?", next: { concept: "My neighbor built a fence that crossed onto my property! We had to look at property deeds and boundary laws to resolve it.", feedback: "Property surveys are important!" }},
+                        { text: "How do property boundaries work?", next: { concept: "Property boundaries are defined by deeds and surveys. Adverse possession allows someone to gain ownership of land by using it openly for a statutory period.", feedback: "Boundary disputes can become very complex!" }},
+                        { text: "What can I do about noisy neighbors?", next: { concept: "You can: 1) Talk to them directly, 2) Check local noise ordinances, 3) Contact the HOA if applicable, 4) Seek legal remedies for nuisance.", feedback: "Noise ordinances vary by location!" }}
+                    ]
+                }
+            ];
+        }
+        
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if ((e.key === 'e' || e.key === 'Enter') && !gameState.showChoices) {
+                if (gameState.currentDialogue) {
+                    advanceDialogue();
+                } else {
+                    checkInteraction();
+                }
+            }
+            e.preventDefault();
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        function checkInteraction() {
+            const player = gameState.player;
+            for (let npc of gameState.npcs) {
+                const dx = player.x - npc.x;
+                const dy = player.y - npc.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 50) {
+                    startDialogue(npc);
+                    return;
+                }
+            }
+        }
+        
+        function startDialogue(npc) {
+            const scenarios = npc.scenarios;
+            const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+            gameState.currentScenario = scenario;
+            gameState.dialogueIndex = 0;
+            gameState.learnedConcepts.add(scenario.concept);
+            
+            showDialogue(npc.name, scenario.intro, scenario.choices);
+        }
+        
+        function showDialogue(speaker, text, choices = null) {
+            const dialogueBox = document.getElementById('dialogueBox');
+            const speakerName = document.getElementById('speakerName');
+            const dialogueText = document.getElementById('dialogueText');
+            const choicesDiv = document.getElementById('choices');
+            
+            speakerName.textContent = speaker;
+            dialogueText.textContent = text;
+            
+            choicesDiv.innerHTML = '';
+            if (choices) {
+                gameState.showChoices = true;
+                choices.forEach((choice, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice-btn';
+                    btn.textContent = choice.text;
+                    btn.onclick = () => makeChoice(choice);
+                    choicesDiv.appendChild(btn);
+                });
+            } else {
+                gameState.showChoices = false;
+            }
+            
+            dialogueBox.classList.add('active');
+        }
+        
+        function makeChoice(choice) {
+            const dialogueText = document.getElementById('dialogueText');
+            const choicesDiv = document.getElementById('choices');
+            
+            dialogueText.innerHTML = `<span style="color: #ffd700;">${choice.next.concept}</span><br><br>${choice.next.feedback}`;
+            choicesDiv.innerHTML = '';
+            
+            const continueBtn = document.createElement('button');
+            continueBtn.className = 'choice-btn';
+            continueBtn.textContent = 'Continue (Learn more)';
+            continueBtn.onclick = () => {
+                const npcs = gameState.npcs;
+                const currentNpc = npcs.find(n => n.name === document.getElementById('speakerName').textContent);
+                if (currentNpc) {
+                    const scenarios = currentNpc.scenarios;
+                    const newScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+                    gameState.currentScenario = newScenario;
+                    gameState.learnedConcepts.add(newScenario.concept);
+                    showDialogue(currentNpc.name, newScenario.intro, newScenario.choices);
+                }
+            };
+            choicesDiv.appendChild(continueBtn);
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'choice-btn';
+            closeBtn.textContent = 'Close (Back to game)';
+            closeBtn.onclick = closeDialogue;
+            choicesDiv.appendChild(closeBtn);
+        }
+        
+        function advanceDialogue() {
+            closeDialogue();
+        }
+        
+        function closeDialogue() {
+            document.getElementById('dialogueBox').classList.remove('active');
+            gameState.currentDialogue = null;
+            gameState.showChoices = false;
+            gameState.currentScenario = null;
+        }
+        
+        function updateLocationName() {
+            const player = gameState.player;
+            const buildings = gameState.buildings;
+            let location = 'Town Square';
+            
+            for (let b of buildings) {
+                const bx = b.x * TILE_SIZE + (b.width * TILE_SIZE) / 2;
+                const by = b.y * TILE_SIZE + (b.height * TILE_SIZE) / 2;
+                const dx = player.x - bx;
+                const dy = player.y - by;
+                if (Math.abs(dx) < 100 && Math.abs(dy) < 80) {
+                    location = b.name;
+                    break;
+                }
+            }
+            
+            document.getElementById('locationName').textContent = location;
+        }
+        
+        function updateHint() {
+            const player = gameState.player;
+            let canInteract = false;
+            
+            for (let npc of gameState.npcs) {
+                const dx = player.x - npc.x;
+                const dy = player.y - npc.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 60) {
+                    canInteract = true;
+                    break;
+                }
+            }
+            
+            const hint = document.getElementById('hint');
+            if (canInteract) {
+                hint.textContent = 'Press E or ENTER to interact';
+                hint.style.color = '#ffd700';
+            } else {
+                hint.textContent = 'Explore the town';
+                hint.style.color = '#888';
+            }
+        }
+        
+        function update() {
+            if (gameState.showChoices || gameState.currentDialogue) return;
+            
+            const player = gameState.player;
+            const speed = 3;
+            let dx = 0, dy = 0;
+            
+            if (keys['w'] || keys['arrowup']) { dy = -speed; player.direction = 'up'; }
+            if (keys['s'] || keys['arrowdown']) { dy = speed; player.direction = 'down'; }
+            if (keys['a'] || keys['arrowleft']) { dx = -speed; player.direction = 'left'; }
+            if (keys['d'] || keys['arrowright']) { dx = speed; player.direction = 'right'; }
+            
+            if (dx !== 0 || dy !== 0) {
+                player.moving = true;
+                player.frame = (player.frame + 0.15) % 4;
+                
+                let newX = player.x + dx;
+                let newY = player.y + dy;
+                
+                if (isWalkable(newX, newY) && 
+                    newX > 20 && newX < canvas.width - 20 && 
+                    newY > 20 && newY < canvas.height - 20) {
+                    player.x = newX;
+                    player.y = newY;
+                }
+            } else {
+                player.moving = false;
+                player.frame = 0;
+            }
+            
+            updateLocationName();
+            updateHint();
+        }
+        
+        function drawMap() {
+            for (let y = 0; y < map.length; y++) {
+                for (let x = 0; x < map[y].length; x++) {
+                    const tile = map[y][x];
+                    const px = x * TILE_SIZE;
+                    const py = y * TILE_SIZE;
+                    
+                    if (tile === 1) {
+                        ctx.fillStyle = '#2d4a2d';
+                        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        ctx.fillStyle = '#3d5c3d';
+                        ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                    } else if (tile === 2) {
+                        ctx.fillStyle = '#8b7355';
+                        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        ctx.fillStyle = '#a08060';
+                        ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+                    } else if (tile === 3) {
+                        ctx.fillStyle = '#5a7a5a';
+                        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        ctx.fillStyle = '#6a8a6a';
+                        ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                    }
+                }
+            }
+        }
+        
+        function drawBuilding(building) {
+            const x = building.x * TILE_SIZE;
+            const y = building.y * TILE_SIZE;
+            const w = building.width * TILE_SIZE;
+            const h = building.height * TILE_SIZE;
+            
+            ctx.fillStyle = building.color;
+            ctx.fillRect(x + 10, y + 20, w - 20, h - 20);
+            
+            ctx.fillStyle = '#3a3a4a';
+            ctx.fillRect(x + 10, y + 20, w - 20, 8);
+            
+            ctx.fillStyle = '#87ceeb';
+            ctx.fillRect(x + 20, y + 35, 20, 20);
+            ctx.fillRect(x + w - 50, y + 35, 20, 20);
+            
+            if (building.roofColor) {
+                ctx.fillStyle = building.roofColor;
+                ctx.beginPath();
+                ctx.moveTo(x + 5, y + 20);
+                ctx.lineTo(x + w / 2, y + 5);
+                ctx.lineTo(x + w - 5, y + 20);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            ctx.fillStyle = '#ffd700';
+            ctx.font = '8px "Press Start 2P"';
+            ctx.textAlign = 'center';
+            ctx.fillText(building.name, x + w / 2, y - 5);
+        }
+        
+        function drawSprite(sprite, x, y, direction, frame) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            if (direction === 'left') {
+                ctx.scale(-1, 1);
+            }
+            
+            const bounce = Math.floor(frame) % 2 * 2;
+            ctx.drawImage(sprites[sprite], -12, -16 + bounce);
+            
+            ctx.restore();
+        }
+        
+        function drawNPC(npc) {
+            const player = gameState.player;
+            const dist = Math.sqrt(Math.pow(player.x - npc.x, 2) + Math.pow(player.y - npc.y, 2));
+            
+            if (dist < 60) {
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+                ctx.beginPath();
+                ctx.arc(npc.x, npc.y - 25, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#ffd700';
+                ctx.font = '6px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.fillText('!', npc.x, npc.y - 30);
+            }
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (bgImage.complete && bgImage.naturalWidth > 0) {
+                ctx.drawImage(bgImage, 0, 0, 800, 600);
+            } else {
+                drawMap();
+                gameState.buildings.forEach(drawBuilding);
+            }
+            
+            gameState.npcs.forEach(drawNPC);
+            
+            const player = gameState.player;
+            if (playerImg.complete && playerImg.naturalWidth > 0) {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                if (player.direction === 'left') {
+                    ctx.scale(-1, 1);
+                }
+                const bounce = Math.floor(player.frame) % 2 * 2;
+                const scale = 0.25;
+                ctx.drawImage(playerImg, -playerImg.width * scale / 2, -playerImg.height * scale + bounce, playerImg.width * scale, playerImg.height * scale);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(player.x - 10, player.y - 20, 20, 30);
+            }
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        initBuildings();
+        gameLoop();
+        
+        console.log('Legal Quest loaded! Use WASD/Arrows to move, E/Enter to interact.');
+    </script>
+</body>
+</html>

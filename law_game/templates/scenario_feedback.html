@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback - Question {{ question_number }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Question {{ question_number }} Feedback</h1>
+            <div class="header-links">
+                <a href="{{ url_for('scenario_chains') }}" class="btn btn-secondary">Back to Scenarios</a>
+            </div>
+        </div>
+        
+        <div class="scenario-feedback-container">
+            <div class="feedback-result {% if is_correct %}correct-feedback{% else %}incorrect-feedback{% endif %}">
+                {% if is_correct %}
+                    <h2>✓ Correct Answer!</h2>
+                {% else %}
+                    <h2>✗ Incorrect Answer</h2>
+                {% endif %}
+            </div>
+            
+            <div class="feedback-details">
+                <div class="your-choice">
+                    <h3>Your Choice:</h3>
+                    <p class="choice-text {% if is_correct %}correct-text{% else %}incorrect-text{% endif %}">
+                        {{ selected_answer }}) 
+                        {% if selected_answer == 'A' %}{{ question.option_a }}
+                        {% elif selected_answer == 'B' %}{{ question.option_b }}
+                        {% elif selected_answer == 'C' %}{{ question.option_c }}
+                        {% elif selected_answer == 'D' %}{{ question.option_d }}
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if not is_correct %}
+                <div class="correct-choice">
+                    <h3>Correct Choice:</h3>
+                    <p class="choice-text correct-text">
+                        {{ question.correct_answer }}) 
+                        {% if question.correct_answer == 'A' %}{{ question.option_a }}
+                        {% elif question.correct_answer == 'B' %}{{ question.option_b }}
+                        {% elif question.correct_answer == 'C' %}{{ question.option_c }}
+                        {% elif question.correct_answer == 'D' %}{{ question.option_d }}
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+                
+                <div class="feedback-explanation">
+                    <h3>Explanation:</h3>
+                    <p>{{ question.feedback }}</p>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('continue_scenario', scenario_id=scenario_id, question_number=question_number) }}" class="btn btn-primary btn-large">Continue to Next Question</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

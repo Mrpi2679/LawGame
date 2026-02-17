@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ level.title }} - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='ux-enhancements.js') }}" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator">›</span>
+            <a href="{{ url_for('mode_select') }}" class="breadcrumb-item">Game Modes</a>
+            <span class="breadcrumb-separator">›</span>
+            <a href="{{ url_for('levels') }}" class="breadcrumb-item">Level-based Learning</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-item active">{{ level.title }}</span>
+        </nav>
+        
+        <div class="header">
+            <h1>{{ level.title }}</h1>
+            <div class="header-links">
+                <a href="{{ url_for('levels') }}" class="btn btn-secondary">Back to Levels</a>
+                <a href="{{ url_for('mode_select') }}" class="btn btn-secondary">Modes</a>
+            </div>
+        </div>
+        
+        {% if results %}
+            <!-- Results View -->
+            <div class="results-container">
+            <div class="score-summary">
+                <h2>Your Score: {{ score }}%</h2>
+                <p>{{ correct_answers }} out of {{ total_questions }} questions correct</p>
+                {% if score >= 60 %}
+                    <div class="success-message">
+                        <p>Congratulations! You completed this level!</p>
+                    </div>
+                {% else %}
+                    <div class="info-message">
+                        <p>You need at least 60% to complete this level. Try again!</p>
+                    </div>
+                {% endif %}
+            </div>
+                
+                {% for result in results %}
+                    <div class="question-result {% if result.is_correct %}correct{% else %}incorrect{% endif %}">
+                        <div class="result-header">
+                            <h3>Question {{ loop.index }}</h3>
+                            {% if result.is_correct %}
+                                <span class="result-badge correct-badge">Correct</span>
+                            {% else %}
+                                <span class="result-badge incorrect-badge">Wrong</span>
+                            {% endif %}
+                        </div>
+                        <p class="question-text">{{ result.question_text }}</p>
+                        <div class="answer-details">
+                            <div class="answer-item">
+                                <strong>Your Answer:</strong> 
+                                <span class="{% if result.is_correct %}correct-text{% else %}incorrect-text{% endif %}">
+                                    {{ result.user_answer }} - {{ result.options[result.user_answer] }}
+                                </span>
+                            </div>
+                            {% if not result.is_correct %}
+                                <div class="answer-item">
+                                    <strong>Correct Answer:</strong> 
+                                    <span class="correct-text">
+                                        {{ result.correct_answer }} - {{ result.options[result.correct_answer] }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="explanation">
+                            <strong>Explanation:</strong>
+                            <p>{{ result.explanation }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <div class="action-buttons">
+                    <a href="{{ url_for('levels') }}" class="btn btn-secondary">Back to Levels</a>
+                    {% if score < 60 %}
+                        <a href="{{ url_for('play_level', level_id=level.id) }}" class="btn btn-primary">Try Again</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <!-- Question Form -->
+            <form method="POST" action="{{ url_for('submit_level', level_id=level.id) }}">
+                {% for question in questions %}
+                    <div class="question-card">
+                        <h3>Question {{ loop.index }}</h3>
+                        <p class="question-text">{{ question.question_text }}</p>
+                        
+                        <div class="options">
+                            <label class="option-label">
+                                <input type="radio" name="question_{{ question.id }}" value="A" required>
+                                <span>A) {{ question.option_a }}</span>
+                            </label>
+                            <label class="option-label">
+                                <input type="radio" name="question_{{ question.id }}" value="B" required>
+                                <span>B) {{ question.option_b }}</span>
+                            </label>
+                            <label class="option-label">
+                                <input type="radio" name="question_{{ question.id }}" value="C" required>
+                                <span>C) {{ question.option_c }}</span>
+                            </label>
+                            <label class="option-label">
+                                <input type="radio" name="question_{{ question.id }}" value="D" required>
+                                <span>D) {{ question.option_d }}</span>
+                            </label>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <div class="submit-container">
+                    <button type="submit" class="btn btn-primary btn-large">Submit Answers</button>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='ux-enhancements.js') }}" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-item active">Sign Up</span>
+        </nav>
+        
+        <div class="auth-box">
+            <h1>Law Game</h1>
+            <h2>Sign Up</h2>
+            
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="flash-message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('signup') }}" id="signupForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="Choose a username (min 3 characters)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Create a strong password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm your password">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="signupBtn">Sign Up</button>
+            </form>
+            
+            <p class="auth-link">
+                Already have an account? <a href="{{ url_for('login') }}">Login</a>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('signupBtn');
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            // Client-side validation
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                const confirmField = document.getElementById('confirm_password');
+                confirmField.classList.add('shake-error');
+                confirmField.style.borderColor = '#f87171';
+                setTimeout(() => {
+                    confirmField.classList.remove('shake-error');
+                }, 500);
+                return;
+            }
+            
+            btn.classList.add('btn-loading');
+            btn.disabled = true;
+        });
+        
+        // Real-time validation feedback
+        document.getElementById('username').addEventListener('input', function() {
+            if (this.value.length >= 3) {
+                this.style.borderColor = 'var(--secondary-brass)';
+            } else {
+                this.style.borderColor = '#e2e8f0';
+            }
+        });
+        
+        document.getElementById('confirm_password').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            if (this.value && this.value === password) {
+                this.style.borderColor = 'var(--secondary-brass)';
+            } else if (this.value) {
+                this.style.borderColor = '#f87171';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You vs Bot - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator">›</span>
+            <a href="{{ url_for('mode_select') }}" class="breadcrumb-item">Game Modes</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-item active">You vs Bot</span>
+        </nav>
+        
+        <div class="header">
+            <h1>You vs Bot</h1>
+            <p>Test your legal knowledge against AI</p>
+            <div class="header-links">
+                <a href="{{ url_for('mode_select') }}" class="btn btn-secondary">Back to Modes</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <div class="flash-message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="mode-selection">
+            <h2>Question Selection</h2>
+            <p class="intro-text">Choose how many questions you'd like to face in this session:</p>
+            
+            <div class="stats-container">
+                <div class="stat-item">
+                    <span class="stat-label">Total Questions Available:</span>
+                    <span class="stat-value">{{ total_questions }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Questions Already Answered:</span>
+                    <span class="stat-value">{{ answered_questions }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Remaining Questions:</span>
+                    <span class="stat-value">{{ remaining_questions }}</span>
+                </div>
+            </div>
+
+            {% if remaining_questions == 0 %}
+            <div class="completion-notice">
+                <div class="completion-icon">🎉</div>
+                <h3>Amazing Work!</h3>
+                <p>You've completed all {{ total_questions }} available legal challenges!</p>
+                <p>Your legal knowledge has been tested and you've proven yourself against the AI bot.</p>
+            </div>
+            {% else %}
+            <form method="POST" action="{{ url_for('start_bot_session') }}" class="question-selection-form">
+                <div class="form-group">
+                    <label for="question_count">Number of Questions:</label>
+                    <select id="question_count" name="question_count" required>
+                        {% set max_questions = remaining_questions + 1 if remaining_questions < 10 else 11 %}
+                        {% for i in range(1, max_questions) %}
+                        <option value="{{ i }}">{{ i }} question{{ 's' if i > 1 else '' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="shuffle" checked>
+                        Shuffle questions randomly
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-large">Start Challenge</button>
+            </form>
+            {% endif %}
+
+            <div class="action-buttons">
+                <a href="{{ url_for('reset_bot_questions') }}" class="btn btn-secondary">Reset Progress</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ scenario.title }} - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ scenario.title }}</h1>
+            <div class="header-links">
+                <a href="{{ url_for('reset_scenario', scenario_id=scenario.id) }}" class="btn btn-secondary">Restart</a>
+                <a href="{{ url_for('scenario_chains') }}" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
+        
+        <div class="scenario-info">
+            <div class="info-badge">
+                <span class="domain-badge">{{ scenario.domain }}</span>
+                <span class="law-badge">{{ scenario.law_involved }}</span>
+            </div>
+            <div class="step-indicator">
+                Step {{ step_number }}
+            </div>
+        </div>
+        
+        <div class="scenario-container">
+            <div class="story-context">
+                <h3>The Situation</h3>
+                <p>{{ current_step.story_context }}</p>
+            </div>
+            
+            <form method="POST" action="{{ url_for('submit_scenario_step', scenario_id=scenario.id, step_number=step_number) }}">
+                <div class="scenario-options">
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="A" required>
+                        <span><strong>A)</strong> {{ current_step.option_a }}</span>
+                    </label>
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="B" required>
+                        <span><strong>B)</strong> {{ current_step.option_b }}</span>
+                    </label>
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="C" required>
+                        <span><strong>C)</strong> {{ current_step.option_c }}</span>
+                    </label>
+                    <label class="option-label">
+                        <input type="radio" name="answer" value="D" required>
+                        <span><strong>D)</strong> {{ current_step.option_d }}</span>
+                    </label>
+                </div>
+                
+                <div class="submit-container">
+                    <button type="submit" class="btn btn-primary btn-large">Make Decision</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

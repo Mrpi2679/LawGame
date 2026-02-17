@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Answer Feedback - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>You vs Bot</h1>
+            <p>Answer Feedback</p>
+            <div class="header-links">
+                <a href="{{ url_for('bot_mode') }}" class="btn btn-secondary">Back to Bot Mode</a>
+                <a href="{{ url_for('mode_select') }}" class="btn btn-secondary">Game Modes</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+
+        <div class="feedback-container">
+            <div class="question-card {% if is_correct %}correct-answer{% else %}incorrect-answer{% endif %}">
+                <h3>Question</h3>
+                <p class="question-text">{{ question.question_text }}</p>
+                
+<div class="answer-comparison">
+                    <div class="your-answer">
+                        <h4>Your Answer: {{ selected_answer }})</h4>
+                        <p class="answer-text">
+                            {% if selected_answer == 'A' %}{{ question.option_a }}
+                            {% elif selected_answer == 'B' %}{{ question.option_b }}
+                            {% elif selected_answer == 'C' %}{{ question.option_c }}
+                            {% elif selected_answer == 'D' %}{{ question.option_d }}
+                            {% endif %}
+                        </p>
+                        <span class="{% if is_correct %}correct-badge{% else %}incorrect-badge{% endif %}">
+                            {% if is_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="ai-answer">
+                        <h4>AI Answer: {{ ai_answer }})</h4>
+                        <p class="answer-text">
+                            {% if ai_answer == 'A' %}{{ question.option_a }}
+                            {% elif ai_answer == 'B' %}{{ question.option_b }}
+                            {% elif ai_answer == 'C' %}{{ question.option_c %}
+                            {% elif ai_answer == 'D' %}{{ question.option_d }}
+                            {% endif %}
+                        </p>
+                        <span class="{% if is_ai_correct %}correct-badge{% else %}incorrect-badge{% endif %}">
+                            {% if is_ai_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="correct-answer">
+                        <h4>Correct Answer: {{ correct_answer }})</h4>
+                        <p class="answer-text">
+                            {% if correct_answer == 'A' %}{{ question.option_a }}
+                            {% elif correct_answer == 'B' %}{{ question.option_b }}
+                            {% elif correct_answer == 'C' %}{{ question.option_c }}
+                            {% elif correct_answer == 'D' %}{{ question.option_d }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                    
+                    <div class="correct-answer">
+                        <h4>Correct Answer: {{ correct_answer }})</h4>
+                        <p class="answer-text">
+                            {% if correct_answer == 'A' %}{{ question.option_a }}
+                            {% elif correct_answer == 'B' %}{{ question.option_b }}
+                            {% elif correct_answer == 'C' %}{{ question.option_c }}
+                            {% elif correct_answer == 'D' %}{{ question.option_d }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="result-indicator">
+                    {% if is_correct %}
+                        <div class="success-message">
+                            <h3>✅ Correct!</h3>
+                            <p>Well done! You got this question right in {{ attempts }} attempt{{ 's' if attempts > 1 else '' }}.</p>
+                        </div>
+                    {% else %}
+                        <div class="error-message">
+                            <h3>❌ Incorrect</h3>
+                            <p>That's not the right answer. This is attempt #{{ attempts }}. Review the explanation below.</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if user_score is defined and bot_score is defined %}
+                    <div class="attempts-score">
+                        <p><strong>Current Score:</strong> You: {{ user_score }} | Bot: {{ bot_score }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="explanation-box">
+                    <h4>Explanation:</h4>
+                    <p>{{ question.explanation }}</p>
+                </div>
+                
+                <div class="action-buttons">
+                    {% if retry_same_question %}
+                        <!-- Wrong answer, retry same question -->
+                        <form method="POST" action="{{ url_for('retry_same_question') }}">
+                            <input type="hidden" name="question_id" value="{{ question.id }}">
+                            <button type="submit" class="btn btn-warning btn-large">Try Again →</button>
+                        </form>
+                    {% else %}
+                        <!-- Correct answer, continue to next -->
+                        <form method="POST" action="{{ url_for('continue_bot_session') }}">
+                            <button type="submit" class="btn btn-primary btn-large">Next Question →</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

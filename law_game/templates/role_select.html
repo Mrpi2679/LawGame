@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Role - Law Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='ux-enhancements.js') }}" defer></script>
+</head>
+<body>
+    <div class="container">
+        <nav class="breadcrumb">
+            <a href="{{ url_for('index') }}" class="breadcrumb-item">Home</a>
+            <span class="breadcrumb-separator">›</span>
+            <a href="{{ url_for('mode_select') }}" class="breadcrumb-item">Game Modes</a>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-item active">Role Selection</span>
+        </nav>
+        
+        <div class="header">
+            <h1>Role-based Learning</h1>
+            <div class="header-links">
+                <a href="{{ url_for('mode_select') }}" class="btn btn-secondary">Back to Modes</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+        
+        <div class="mode-selection">
+            <h2>Choose Your Role</h2>
+            <p class="intro-text">Select your professional role to learn relevant legal concepts for your field.</p>
+            
+            <div class="mode-cards">
+                {% for role in roles %}
+                <div class="mode-card">
+                    <h3>{{ role.name }}</h3>
+                    <p>{{ role.description }}</p>
+                    <a href="{{ url_for('select_role', role_id=role.id) }}" class="btn btn-primary">Select {{ role.name }}</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
