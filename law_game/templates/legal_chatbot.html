@@ -8,84 +8,205 @@
     <script src="{{ url_for('static', filename='ux-enhancements.js') }}" defer></script>
     <style>
         .chatbot-container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
+        }
+        .intro-text {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 30px;
+            font-size: 17px;
+            background: rgba(93, 64, 55, 0.85);
+            padding: 20px 25px;
+            border-radius: 10px;
+            border: 2px solid var(--secondary-brass);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            font-weight: 500;
         }
         .scenario-input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #2c3e50;
-            border-radius: 8px;
+            padding: 20px;
+            border: 2px solid var(--border-walnut);
+            border-radius: 10px;
             font-size: 16px;
             font-family: inherit;
-            min-height: 120px;
+            min-height: 140px;
             resize: vertical;
             margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
         }
         .scenario-input:focus {
             outline: none;
-            border-color: #3498db;
+            border-color: var(--secondary-brass);
+            box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.2);
         }
-        .chatbot-response {
-            background: #f8f9fa;
+        .ai-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            border: 1px solid var(--border-walnut);
+        }
+        .ai-toggle input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            accent-color: var(--secondary-brass);
+            cursor: pointer;
+        }
+        .ai-toggle label {
+            font-size: 15px;
+            color: var(--text-parchment);
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .ai-toggle .ai-badge {
+            background: var(--secondary-brass);
+            color: white;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .response-card {
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 12px;
-            padding: 25px;
-            margin-top: 20px;
-            border-left: 4px solid #3498db;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid var(--secondary-brass);
+        }
+        .response-card.ai-mode {
+            border-left-color: #764ba2;
+        }
+        .response-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--warm-beige);
+        }
+        .response-header h3 {
+            color: var(--primary-walnut);
+            font-size: 20px;
+            margin: 0;
+        }
+        .response-header .source {
+            background: var(--warm-beige);
+            color: var(--primary-walnut);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border-walnut);
         }
         .response-section {
-            margin-bottom: 15px;
+            margin-bottom: 25px;
         }
-        .response-label {
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
+        .response-section:last-child {
+            margin-bottom: 0;
         }
-        .response-content {
+        .response-section h4 {
+            color: var(--primary-walnut);
+            font-size: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .response-section p {
             color: #555;
+            line-height: 1.7;
+            font-size: 15px;
         }
-        .response-list {
-            list-style: none;
-            padding: 0;
+        .legal-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
             margin: 10px 0;
         }
-        .response-list li {
-            padding: 8px 12px;
-            margin: 5px 0;
-            background: white;
-            border-radius: 6px;
-            border: 1px solid #e0e0e0;
+        .legal-tag {
+            background: var(--warm-beige);
+            color: var(--primary-walnut);
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid var(--border-walnut);
+        }
+        .action-item {
+            background: var(--card-parchment);
+            padding: 15px 18px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary-brass);
+            font-size: 14px;
+            color: #555;
+        }
+        .action-item.recommended {
+            border-left-color: #27ae60;
+            background: #e8f8f0;
+        }
+        .action-item .action-label {
+            font-weight: 600;
+            color: var(--primary-walnut);
+            display: block;
+            margin-bottom: 5px;
         }
         .disclaimer-box {
-            background: #fff3cd;
+            background: #fff8e1;
             border: 1px solid #ffc107;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 25px;
             font-size: 14px;
             color: #856404;
+            text-align: center;
         }
-        .no-match {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-            color: #721c24;
+        .your-scenario-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin: 25px 0;
+            border: 2px solid var(--secondary-brass);
         }
-        .your-scenario {
-            background: #e7f3ff;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
+        .your-scenario-box h4 {
+            color: var(--primary-walnut);
+            font-size: 14px;
+            margin-bottom: 10px;
         }
-        .your-scenario h3 {
-            margin: 0 0 10px 0;
-            color: #2c3e50;
-        }
-        .your-scenario p {
+        .your-scenario-box p {
+            color: #333;
+            font-size: 15px;
+            line-height: 1.6;
             margin: 0;
-            color: #555;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-parchment);
+        }
+        .loading-spinner {
+            border: 4px solid var(--warm-beige);
+            border-top: 4px solid var(--secondary-brass);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn-center {
+            text-align: center;
+            margin-top: 25px;
         }
     </style>
 </head>
@@ -108,7 +229,7 @@
         </div>
         
         <div class="chatbot-container">
-            <p>Describe your legal situation in simple words, and I'll help identify the relevant area of law.</p>
+            <p class="intro-text">Describe your legal situation in simple words, and get AI-powered guidance based on real legal information.</p>
             
             <form method="POST" action="{{ url_for('legal_chatbot') }}">
                 <textarea 
@@ -117,75 +238,91 @@
                     placeholder="Example: I bought a phone from a store but it's not working properly. The shopkeeper refuses to replace it or give my money back..."
                     required
                 >{{ user_scenario or '' }}</textarea>
-                <button type="submit" class="btn btn-primary btn-large">Analyze My Situation</button>
+                
+                <div class="ai-toggle">
+                    <input type="checkbox" id="use_ai" name="use_ai" value="on" {% if request.form.get('use_ai') %}checked{% endif %}>
+                    <label for="use_ai">Enable AI Search</label>
+                    <span class="ai-badge">Web + LLaMA</span>
+                </div>
+                
+                <div class="btn-center">
+                    <button type="submit" class="btn btn-primary btn-large">Analyze My Situation</button>
+                </div>
             </form>
             
             {% if user_scenario %}
-                <div class="your-scenario">
-                    <h3>Your Situation:</h3>
+                <div class="your-scenario-box">
+                    <h4>YOUR SITUATION</h4>
                     <p>{{ user_scenario }}</p>
                 </div>
                 
-                {% if matched_scenario %}
-                    <div class="chatbot-response">
+                {% if ai_response %}
+                    <div class="response-card ai-mode">
+                        <div class="response-header">
+                            <h3>AI-Powered Legal Guidance</h3>
+                            <span class="source">Powered by LLaMA + Web Search</span>
+                        </div>
+                        <div style="white-space: pre-wrap; line-height: 1.8; color: #333; font-size: 15px;">{{ ai_response }}</div>
+                        <div class="disclaimer-box">
+                            This information is for educational and awareness purposes only. Not a substitute for professional legal advice.
+                        </div>
+                    </div>
+                {% elif web_content %}
+                    <div class="response-card">
+                        <div class="response-header">
+                            <h3>Web Search Results</h3>
+                        </div>
+                        <p>{{ web_content }}</p>
+                    </div>
+                {% elif legal_info %}
+                    <div class="response-card">
                         <div class="response-section">
-                            <div class="response-label">🧠 Situation Identified:</div>
-                            <div class="response-content">{{ matched_scenario.title }}</div>
+                            <h4>1. SITUATION SUMMARY</h4>
+                            <p>{{ user_scenario }}</p>
                         </div>
                         
                         <div class="response-section">
-                            <div class="response-label">📚 Applicable Legal Category:</div>
-                            <div class="response-content">{{ matched_scenario.domain }}</div>
+                            <h4>2. LEGAL AWARENESS</h4>
+                            <p><strong>Area of Law:</strong> {{ legal_info.category }}</p>
+                            <div class="legal-tags">
+                                {% for law in legal_info.laws %}
+                                    <span class="legal-tag">{{ law }}</span>
+                                {% endfor %}
+                            </div>
+                            <p>{{ legal_info.explanation }}</p>
                         </div>
                         
                         <div class="response-section">
-                            <div class="response-label">⚖️ Relevant Law(s) from Game Database:</div>
-                            <div class="response-content">{{ matched_scenario.law_involved }}</div>
-                        </div>
-                        
-                        <div class="response-section">
-                            <div class="response-label">🧩 Why This Applies:</div>
-                            <div class="response-content">
-                                {% if matched_scenario.domain == 'Consumer' %}
-                                    Your scenario involves a purchase dispute where the seller is not honoring their obligations. This falls under consumer protection laws.
-                                {% elif matched_scenario.domain == 'Labour' %}
-                                    Your scenario relates to employer-employee relationship and workplace rights.
-                                {% elif matched_scenario.domain == 'Cyber' %}
-                                    Your scenario involves digital data and privacy concerns.
-                                {% else %}
-                                    Based on the keywords in your description, this scenario matches our {{ matched_scenario.domain }} law category.
-                                {% endif %}
+                            <h4>3. YOUR OPTIONS</h4>
+                            <div class="action-item recommended">
+                                <span class="action-label">A) Best Action (Recommended)</span>
+                                {{ legal_info.steps[0] }}
+                            </div>
+                            <div class="action-item">
+                                <span class="action-label">B) Alternative Action</span>
+                                {{ legal_info.steps[1] }}
+                            </div>
+                            <div class="action-item">
+                                <span class="action-label">C) What NOT to Do</span>
+                                {{ legal_info.steps[2] }}
                             </div>
                         </div>
                         
                         <div class="response-section">
-                            <div class="response-label">🎮 Player Options:</div>
-                            <ul class="response-list">
-                                <li><strong>Play Scenario:</strong> Practice with similar scenarios in our Scenario Chains mode</li>
-                                <li><strong>Level Learning:</strong> Study {{ matched_scenario.domain }} law in detail through our Level-based Learning</li>
-                                <li><strong>Role-based Learning:</strong> Learn laws relevant to your profession</li>
-                            </ul>
+                            <h4>4. KEY TAKEAWAY</h4>
+                            <p>{{ legal_info.learning_tip }}</p>
                         </div>
                         
                         <div class="disclaimer-box">
-                            <strong>⚠️ Disclaimer:</strong>
-                            This response is for educational purposes within a learning game and does not constitute legal advice.
-                        </div>
-                        
-                        <div style="margin-top: 20px;">
-                            <a href="{{ url_for('play_scenario', scenario_id=matched_scenario.id) }}" class="btn btn-primary">Try This Scenario</a>
+                            This information is for educational and awareness purposes only.
                         </div>
                     </div>
-                {% else %}
-                    <div class="no-match">
-                        <h3>⚠️ No Close Match Found</h3>
-                        <p>Your scenario doesn't closely match any existing scenarios in the game database. Try describing it differently or explore our other learning modes:</p>
-                        <ul>
-                            <li>Level-based Learning - General legal concepts</li>
-                            <li>Scenario Chains - Real-world legal situations</li>
-                            <li>Role-based Learning - Career-specific laws</li>
-                        </ul>
+                    
+                    {% if matched_scenario %}
+                    <div class="btn-center">
+                        <a href="{{ url_for('play_scenario', scenario_id=matched_scenario.id) }}" class="btn btn-primary">Practice This Scenario</a>
                     </div>
+                    {% endif %}
                 {% endif %}
             {% endif %}
         </div>

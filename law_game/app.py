@@ -1397,11 +1397,28 @@ def legal_chatbot():
     
     user_scenario = None
     matched_scenario = None
+    legal_info = None
+    ai_response = None
+    web_content = None
     
     if request.method == 'POST':
         user_scenario = request.form.get('scenario', '').strip()
+        use_ai = request.form.get('use_ai', 'off') == 'on'
         
         if user_scenario:
+            # Try web search + LLaMA first
+            if use_ai:
+                try:
+                    from legal_search import search_legal_info
+                    ai_result = search_legal_info(user_scenario)
+                    if ai_result.get('success'):
+                        ai_response = ai_result.get('response')
+                    else:
+                        web_content = ai_result.get('web_content')
+                except Exception as e:
+                    print(f"AI search error: {e}")
+            
+            # Also check database for matching scenario
             conn = get_db_connection()
             if conn:
                 try:
@@ -1413,13 +1430,13 @@ def legal_chatbot():
                     user_scenario_lower = user_scenario.lower()
                     
                     keywords_map = {
-                        'consumer': ['consumer', 'mrp', 'overcharge', 'refund', 'defective', 'warranty', 'shop', 'store', 'buy', 'purchase'],
-                        'labour': ['employee', 'employer', 'workplace', 'salary', 'leave', 'maternity', 'rights', 'termination', 'harassment'],
-                        'cyber': ['aadhaar', 'data', 'privacy', 'online', 'digital', 'password', 'account', 'hack', 'cyber'],
-                        'property': ['property', 'land', 'house', 'rent', 'tenant', 'landlord', 'ownership', 'deed'],
-                        'contract': ['contract', 'agreement', 'breach', 'party', 'terms', 'promise'],
-                        'criminal': ['theft', 'robbery', 'assault', 'murder', 'fraud', 'crime', 'police'],
-                        'constitutional': ['rights', 'freedom', 'constitution', 'discrimination', 'equal']
+                        'consumer': ['consumer', 'mrp', 'overcharge', 'refund', 'defective', 'warranty', 'shop', 'store', 'buy', 'purchase', 'product', 'bad'],
+                        'labour': ['employee', 'employer', 'workplace', 'salary', 'leave', 'maternity', 'rights', 'termination', 'harassment', 'fired', 'job'],
+                        'cyber': ['aadhaar', 'data', 'privacy', 'online', 'digital', 'password', 'account', 'hack', 'cyber', 'spam', 'email'],
+                        'property': ['property', 'land', 'house', 'rent', 'tenant', 'landlord', 'ownership', 'deed', 'eviction'],
+                        'contract': ['contract', 'agreement', 'breach', 'party', 'terms', 'promise', 'signed'],
+                        'criminal': ['theft', 'robbery', 'assault', 'murder', 'fraud', 'crime', 'police', 'arrested'],
+                        'constitutional': ['rights', 'freedom', 'constitution', 'discrimination', 'equal', ' discrimination']
                     }
                     
                     scenario_scores = []
@@ -1444,13 +1461,163 @@ def legal_chatbot():
                         matched_scenario = scenario_scores[0][0]
                     else:
                         matched_scenario = None
+                    
+                    # Get fallback legal info from database
+                    if not ai_response:
+                        legal_info = get_legal_guidance(user_scenario)
                         
                 except Exception as e:
                     print(f"Chatbot error: {e}")
                 finally:
                     conn.close()
     
-    return render_template('legal_chatbot.html', user_scenario=user_scenario, matched_scenario=matched_scenario)
+    return render_template('legal_chatbot.html', 
+                          user_scenario=user_scenario, 
+                          matched_scenario=matched_scenario,
+                          legal_info=legal_info,
+                          ai_response=ai_response,
+                          web_content=web_content)
+
+
+def get_legal_guidance(scenario):
+    scenario_lower = scenario.lower()
+    
+    legal_knowledge = {
+        'consumer': {
+            'keywords': ['consumer', 'mrp', 'overcharge', 'refund', 'defective', 'warranty', 'shop', 'store', 'buy', 'purchase', 'product not working'],
+            'category': 'Civil - Consumer Protection',
+            'laws': ['Consumer Protection Act 2019', 'The Legal Metrology Act', 'Sale of Goods Act'],
+            'explanation': 'You may have rights under consumer protection laws. Sellers cannot charge above MRP and must provide working products with warranty.',
+            'steps': [
+                'Document the issue with photos/video and keep receipts',
+                'Request replacement or refund in writing from the seller',
+                'If unresolved, file complaint with District Consumer Forum',
+                'Ignoring the issue may result in loss of your rights'
+            ],
+            'learning_tip': 'Always keep receipts and warranty cards. You can file consumer complaints even without a lawyer.'
+        },
+        'labour': {
+            'keywords': ['employee', 'employer', 'workplace', 'salary', 'leave', 'maternity', 'rights', 'termination', 'harassment', 'fired', 'not paid'],
+            'category': 'Civil - Labour Law',
+            'laws': ['Industrial Disputes Act', 'Employees State Insurance Act', 'Minimum Wages Act', 'Maternity Benefit Act'],
+            'explanation': 'You have statutory rights as an employee including minimum wages, safe working conditions, and protection from unfair termination.',
+            'steps': [
+                'Review your employment contract and company policies',
+                'Approach HR department with a written complaint',
+                'File formal complaint with Labour Commissioner',
+                'Quitting without proper notice may weaken your case'
+            ],
+            'learning_tip': 'Written communication with employer creates important evidence. Know your minimum rights under labour laws.'
+        },
+        'cyber': {
+            'keywords': ['aadhaar', 'data', 'privacy', 'online', 'digital', 'password', 'account', 'hack', 'cyber', 'spam', 'email', 'otp'],
+            'category': 'Criminal/Civil - Cyber Law',
+            'laws': ['Information Technology Act 2000', 'IT Rules 2011', 'Digital Personal Data Protection Act 2023'],
+            'explanation': 'Your digital data is protected by law. Unauthorized collection or misuse of personal data is illegal.',
+            'steps': [
+                'Change all compromised passwords immediately',
+                'Report to Cyber Crime cell (cybercrime.gov.in)',
+                'File complaint on national cyber crime portal',
+                'Delaying report may allow more damage to occur'
+            ],
+            'learning_tip': 'Never share OTP or passwords with anyone. Report cyber crimes immediately for best chances of recovery.'
+        },
+        'property': {
+            'keywords': ['property', 'land', 'house', 'rent', 'tenant', 'landlord', 'ownership', 'deed', 'eviction', 'rent not returned'],
+            'category': 'Civil - Property Law',
+            'laws': ['Transfer of Property Act', 'Rent Control Act', 'Registration Act'],
+            'explanation': 'Property rights are protected by law. Both landlords and tenants have specific rights and responsibilities.',
+            'steps': [
+                'Check rental agreement terms and communicate in writing',
+                'Approach local Rent Tribunal or court for disputes',
+                'File civil suit for recovery of property or money',
+                'Self-help eviction is illegal and may lead to counter-claims'
+            ],
+            'learning_tip': 'Always get agreements in writing. Registered agreements carry more legal weight.'
+        },
+        'contract': {
+            'keywords': ['contract', 'agreement', 'breach', 'party', 'terms', 'promise', 'signed', 'did not deliver'],
+            'category': 'Civil - Contract Law',
+            'laws': ['Indian Contract Act 1872', 'Specific Relief Act'],
+            'explanation': 'A valid contract is legally binding. If one party fails to fulfill obligations, it constitutes breach.',
+            'steps': [
+                'Review the contract terms and document the breach',
+                'Send a legal notice demanding performance or compensation',
+                'File civil suit for damages in appropriate court',
+                'Ignoring breach may be seen as accepting the situation'
+            ],
+            'learning_tip': 'Get all agreements in writing. Verbal contracts are harder to prove in court.'
+        },
+        'criminal': {
+            'keywords': ['theft', 'robbery', 'assault', 'murder', 'fraud', 'crime', 'police', 'arrested', 'cheating', 'scam'],
+            'category': 'Criminal Law',
+            'laws': ['Indian Penal Code', 'Criminal Procedure Code'],
+            'explanation': 'These are criminal offenses that require police action and prosecution by the state.',
+            'steps': [
+                'File a First Information Report (FIR) at police station',
+                'If police refuse to register FIR, approach Magistrate directly',
+                'Preserve all evidence including communications',
+                'Taking law into your own hands may make you liable'
+            ],
+            'learning_tip': 'FIR is your right. Police cannot refuse to register a genuine crime complaint.'
+        },
+        'constitutional': {
+            'keywords': ['rights', 'freedom', 'constitution', 'discrimination', 'equal', 'discrimination', 'religion', 'caste'],
+            'category': 'Constitutional Law',
+            'laws': ['Constitution of India', 'SC/ST Prevention of Atrocities Act', 'Equal Remuneration Act'],
+            'explanation': 'Fundamental rights are guaranteed by the Constitution including equality, freedom, and protection from discrimination.',
+            'steps': [
+                'Approach State Human Rights Commission for violations',
+                'File petition in High Court for fundamental rights',
+                'Contact National Commission for SC/ST/BC for discrimination',
+                'Remaining silent encourages further violations'
+            ],
+            'learning_tip': 'Constitutional rights can be enforced through courts. Document any discrimination clearly.'
+        },
+        'medical': {
+            'keywords': ['doctor', 'hospital', 'treatment', 'medical', 'negligence', 'surgery', 'operation'],
+            'category': 'Civil - Medical Negligence',
+            'laws': ['Consumer Protection Act', 'Indian Medical Council Act'],
+            'explanation': 'Medical negligence occurs when a doctor fails to provide standard care, causing harm to the patient.',
+            'steps': [
+                'Get a second medical opinion to confirm negligence',
+                'File complaint with State Medical Council',
+                'Approach Consumer Forum for compensation claim',
+                'Accepting hospital settlement without legal advice may limit your rights'
+            ],
+            'learning_tip': 'Not all bad outcomes are negligence. Get expert opinion before pursuing legal action.'
+        },
+        'marriage': {
+            'keywords': ['divorce', 'marriage', 'husband', 'wife', 'dowry', 'domestic violence', 'maintenance', 'alimony'],
+            'category': 'Family Law',
+            'laws': ['Hindu Marriage Act', 'Special Marriage Act', 'Dowry Prohibition Act', 'Domestic Violence Act'],
+            'explanation': 'Spouses have legal rights regarding divorce, maintenance, and protection from violence.',
+            'steps': [
+                'Approach family court for legal remedies',
+                'File for maintenance under Section 125 CrPC',
+                'Apply for protection order under DV Act',
+                'Staying silent in abusive situations is unsafe'
+            ],
+            'learning_tip': 'Domestic violence is a crime. You can seek immediate protection under law.'
+        }
+    }
+    
+    for key, info in legal_knowledge.items():
+        if any(kw in scenario_lower for kw in info['keywords']):
+            return info
+    
+    return {
+        'category': 'General Legal Guidance',
+        'laws': ['Various applicable laws'],
+        'explanation': 'Your situation may involve legal issues. It is recommended to consult with a lawyer for specific advice.',
+        'steps': [
+            'Document all relevant facts and gather evidence',
+            'Collect supporting documents and communications',
+            'Consult a lawyer specializing in the relevant field',
+            'Do nothing - this may result in loss of legal rights'
+        ],
+        'learning_tip': 'Always document everything and seek professional legal advice for your specific situation.'
+    }
 
 
 if __name__ == '__main__':
